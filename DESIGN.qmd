@@ -1,6 +1,6 @@
 ---
 title: "Mowbot: game design"
-subtitle: "Version 0.8, 2026-11-18. Working name; a living document, every decision in the log at the end."
+subtitle: "Version 0.9, 2026-11-18. Working name; a living document, every decision in the log at the end."
 lang: en
 format:
   typst:
@@ -74,8 +74,10 @@ pay off without a hard cap.
 
 - The game updates every tile each tick with explicit Euler, `h = h + k*(h_max - h)*dt`, with
   `dt` = 1 tick. The rule is shown as readable Python in a read-only "lawn rules" tab.
-- Until level 7 the formula is hidden; students only see the grass grow, about 1 mm per tick when
-  short.
+- k = 1/6000 per tick by default (tuned with `sim/compare.py`): a freshly cut tile at 20 mm grows
+  about 0.013 mm per tick and is ripe again after some 1500 ticks, three laps of a 5×5 lawn.
+  Faster and the lawn is always ripe, so a blind sweep is the best program; slower and the early
+  levels starve. Until level 7 the formula is hidden; students only see the grass grow.
 - At level 7 the student writes `predict(h, k, ticks)`, a loop of that same line, to decide when a
   tile is ripe. It is their first Euler integration, written before they know the name.
 - The week 2 lecture "Det här är numerik" names it: "you already wrote Euler in the game". Pajen
@@ -99,19 +101,25 @@ into is cut. It cannot cut in place, and the start tile is cut only when driven 
 
 - **At most 10 mm per pass**, never below the cutting height (20 mm). Grass at 50 mm needs three
   passes: 50 → 40 → 30 → 20. Passes needed = `(h - 20) // 10`, plus one if there is a remainder.
-- The level 0 lawn starts at 30 mm, so one pass is enough there.
-- From level 11, tall grass cuts worse: above 60 mm a pass removes only 5 mm. Robot mowers trim
+- Lawns start at 45 mm, ripe, so the first lap pays in full.
+- From level 11, tall grass cuts worse: above 70 mm a pass removes only 5 mm. Robot mowers trim
   little and often; in tall grass the blade pushes the stalks down instead of cutting them.
 - `blade_on()`, `blade_off()`: the blade is on from level 0; switching it unlocks at level 3.
-- Income: **1 token per mm removed** on a 1 m² tile.
+- The move's time passes first and the grass grows meanwhile; the cut lands on the grown tile.
+- Income: **1 token per mm removed** on a 1 m² tile when the tile is **ripe**, between 40 and
+  70 mm; **half** outside that window (too short is mulch, too tall tears). This window is what
+  makes timing pay: without it every mm that grows is cut by any sweep sooner or later, so a
+  careless program earns as much as a careful one. With it, a sweep that trims 4 mm of regrowth
+  every lap earns half of what a program that waits for ripe tiles earns, `if grass_height() >= 40`
+  is the level 3 lesson, and the growth map at level 7 decides the visiting order.
 
 ## 6. Core rules from level 0
 
 - Grass grows as in section 3.
 - Costs: `forward` 10 ticks, `backward` 20, a turn 5; cutting adds 10 ticks to the move.
-- Two incentives are built in from the start. **On time**: growth slows as grass gets tall, so a
-  tile left waiting earns less per tick. **Efficient**: the score is tokens per 1000 ticks, so
-  extra turns and empty drives cost.
+- Two incentives are built in from the start. **On time**: a tile pays in full only while ripe,
+  and growth slows as grass gets tall. **Efficient**: the score is tokens per 1000 ticks, so
+  extra turns, empty drives and cutting short grass cost.
 
 ## 7. Levels
 
@@ -121,16 +129,16 @@ Each level adds one rule and one concept.
 |---|---|---|---|
 | 0 | core, 3×3, mower at (0,0) facing North | `forward`, `backward`, `turn_left`, `turn_right` | sequence of calls |
 | 1 | grass regrows: run it again | **`for`**, `range` | repetition |
-| 2 | lawn grows to 4×4, 5×5; the edge is a wall | `get_x()`, `get_y()`, `get_heading()`, `get_lawn_size()`, `forward` returns `True/False`, **`while`** | state and size not hard-coded |
-| 3 | cutting short grass wastes ticks | `grass_height(direction)` (tile ahead), `blade_on/off`, **`if`** | decide before acting |
+| 2 | lawn grows to 5×5; the edge is a wall | `get_x()`, `get_y()`, `get_heading()`, `get_lawn_size()`, `forward` returns `True/False`, **`while`** | state and size not hard-coded |
+| 3 | cutting short grass wastes ticks and pays half | `grass_height(direction)` (tile ahead), `blade_on/off`, **`if`** | decide before acting |
 | 4 | **battery**: a move or a turn 1 %, cutting +1 %; empty = stop | `get_battery()`, `manual_recharge()` (500 ticks) | variables, thresholds |
-| 5 | **blade dulls**: −0.1 % per mm cut; cutting ticks = 10 / sharpness; income × sharpness | `get_blade()`, `manual_sharpen()` (500 ticks) | arithmetic, trade-offs |
+| 5 | **blade dulls**: −0.05 % per mm cut (an eighth of the blade per 5×5 lap); cutting ticks = 10 / sharpness; income × sharpness | `get_blade()`, `manual_sharpen()` (500 ticks) | arithmetic, trade-offs |
 | 6 | **station** at a fixed tile: charge and sharpen in 50 ticks | `get_station()`, `charge()`, `sharpen()` (on the station only), **`def`**, `return` | write `face(d)`, `go_to(x, y)`, `go_home()` |
 | 7 | **growth rates differ** per tile (k high in sun, low in shade); growth law revealed | `scan()`, `get_growth(x, y)`, **lists**, nested loops | write `predict(h, k, ticks)` (Euler); remember which tiles ripen when |
 | 8 | — | second editor tab, **`import`** | helpers into a module |
 | 9 | **flower beds and paths**: driving a bed with the blade on costs 200 tokens | `get_ground(direction)`, `and/or/not` | conditions on more than one thing |
 | 10 | **lawn shapes**: L shape, house in the middle | `is_clear(direction)` | general algorithms, no rectangle |
-| 11 | **cutting height** and **tall grass**: above 60 mm a pass removes 5 mm, not 10 | `set_cut_height(mm)` | multi-pass planning, `//` and `%` |
+| 11 | **cutting height** and **tall grass**: above 70 mm a pass removes 5 mm, not 10; the lawn starts at 80 mm | `set_cut_height(mm)` | multi-pass planning, `//` and `%` |
 | 12 | **moving obstacles**: a hedgehog at random, a person on the arrow keys (lab partner); a hit stops the run | — | check before every move |
 | 13 | **contracts**: stripes follow the driving direction; customers order stripes, a checkerboard, a border | **dicts**, tuples as keys, `%` | final challenges |
 
@@ -147,22 +155,26 @@ Slopes are parked.
 
 ## 9. Economy
 
-- **Income** = mm removed × m² × blade sharpness (sharpness from level 5).
+- **Income** = mm removed × m² × blade sharpness (sharpness from level 5) × ripeness (1 inside
+  the 40–70 mm window, 0.5 outside).
 - **Spending**: tokens buy unlocks (language features, functions, the next level) and upgrades.
-- **Prices** roughly double per level: a naive sweep reaches the next level slowly, a timely and
-  efficient program quickly. First table, to be tuned by simulation and play-testing:
+- **Prices** are set so that a careful program reaches the next level in roughly 1500 ticks at
+  level 0 and 3000–8000 ticks later, while a blind sweep takes about twice as long and, once the
+  blade dulls, never gets there. `sim/compare.py` runs both programs on every core level and
+  prints tokens per 1000 ticks and the ticks to the next price; the table is tuned there and
+  then by play-testing. The engine holds the prices in `mowbot/levels.py`:
 
 | Unlock | Price (tokens) |
 |---|---|
-| `for` | 200 |
-| 4×4 lawn, `while`, position and heading | 500 |
-| `grass_height`, blade switch, `if` | 1 000 |
-| battery level, `get_battery` | 2 000 |
-| blade level, `get_blade` | 4 000 |
-| station, `def` | 8 000 |
-| lists, `scan`, growth map | 12 000 |
-| `import` | 20 000 |
-| each later level | ×1.5–2 |
+| 1 `for` | 200 |
+| 2 5×5 lawn, `while`, position and heading | 400 |
+| 3 `grass_height`, blade switch, `if` | 800 |
+| 4 battery, `get_battery` | 1 200 |
+| 5 blade, `get_blade` | 1 500 |
+| 6 station, `def` | 1 800 |
+| 7 lists, `scan`, growth map | 2 500 |
+| 8 `import` | 3 000 |
+| 9–13 | 6 000, 8 000, 12 000, 16 000, 20 000 |
 
 - **Upgrades** change speed or limits only, never a concept. In tiers: motor (move 10 → 7 → 5
   ticks), faster turning, battery capacity, blade hardness (dulls slower), lawn size.
@@ -334,3 +346,9 @@ and the level table is revised from that before the chapters are written.
 - **2026-11-18**: tall-grass rule stays a step for now (continuous function possible later);
   k is tuned by simulation. Design declared ready to build; the build starts with the rules
   engine in Python, then the browser spike.
+- **2026-11-18**: rules engine built (`mowbot/`, 43 tests) with a naive-vs-careful simulation.
+  The simulation showed that income was growth-bound, so a careless program earned as much as a
+  careful one; the **ripe window** (full pay at 40–70 mm, half outside) from the first economy
+  draft is back as the one rule that makes timing pay. k tuned to 1/6000, lawns start at 45 mm,
+  tall-grass threshold 70 mm, prices rescaled to 200 … 20 000, dulling halved to 0.05 % per mm
+  so that level 5 is a lesson and not a wall. The move's time passes before the cut lands.
