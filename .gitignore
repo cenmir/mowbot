@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# rendered, not source
+DESIGN.pdf
+DESIGN.typ
+DESIGN_files/
