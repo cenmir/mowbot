@@ -1,6 +1,6 @@
 ---
 title: "Mowbot: game design"
-subtitle: "Version 0.9, 2026-11-18. Working name; a living document, every decision in the log at the end."
+subtitle: "Version 0.10, 2026-11-19. Working name; a living document, every decision in the log at the end."
 lang: en
 format:
   typst:
@@ -352,3 +352,8 @@ and the level table is revised from that before the chapters are written.
   draft is back as the one rule that makes timing pay. k tuned to 1/6000, lawns start at 45 mm,
   tall-grass threshold 70 mm, prices rescaled to 200 … 20 000, dulling halved to 0.05 % per mm
   so that level 5 is a lesson and not a wall. The move's time passes before the cut lands.
+- **2026-11-19**: browser spike built in `web/`: Monaco in a VS Code-like shell, the lawn as a
+  pinned tab drawn from a sprite sheet built by `graphics/build_sheet.py`, Pyodide in a Web
+  Worker running the engine's own files, each action posting a snapshot and sleeping on a shared
+  buffer for the speed slider, Stop through the interrupt buffer. Pyodide and Monaco are
+  self-hosted (`web/fetch_vendor.py`), the dev server sends the isolation headers.

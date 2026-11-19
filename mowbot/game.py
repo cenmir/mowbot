@@ -83,6 +83,34 @@ class Game:
         self.tokens = 0.0
         self.unlocked = level.unlocked
         self.obstacles = [Obstacle(kind, x, y) for kind, x, y in level.obstacles]
+        # called with the game after every action; the browser draws and paces the run from it
+        self.listeners = []
+
+    def _notify(self):
+        for listener in self.listeners:
+            listener(self)
+
+    def snapshot(self):
+        """Everything the screen needs, as plain data."""
+        return {
+            "level": self.level.number,
+            "name": self.level.name,
+            "width": self.lawn.width,
+            "height": self.lawn.height,
+            "tiles": [{"x": x, "y": y, "h": round(t.height, 1), "ground": t.ground,
+                       "stripe": t.stripe}
+                      for (x, y), t in sorted(self.lawn.tiles.items())],
+            "mower": {"x": self.x, "y": self.y, "heading": self.heading, "blade": self.blade},
+            "station": self.level.station,
+            "obstacles": [{"kind": ob.kind, "x": ob.x, "y": ob.y} for ob in self.obstacles],
+            "battery": round(self.battery, 1),
+            "sharpness": round(self.sharpness, 1),
+            "cut_height": self.cut_height,
+            "ticks": self.ticks,
+            "tokens": round(self.tokens, 1),
+            "score": round(self.score(), 1),
+            "rules": {"battery": self.rules.battery, "blade": self.rules.blade},
+        }
 
     # --- the clock -----------------------------------------------------------------------------
 
@@ -114,6 +142,7 @@ class Game:
         dx, dy = DELTA[self.heading]
         nx, ny = self.x + sign * dx, self.y + sign * dy
         if (nx, ny) not in self.lawn or self.lawn[(nx, ny)].ground == STONE:
+            self._notify()
             return False
         for ob in self.obstacles:
             if (ob.x, ob.y) == (nx, ny):
@@ -128,17 +157,20 @@ class Game:
         self._spend(ticks)
         if self.blade:
             self._cut(self.lawn[(nx, ny)])
+        self._notify()
         return True
 
     def turn_left(self):
         self.heading = HEADINGS[(HEADINGS.index(self.heading) - 1) % 4]
         self._drain(self.costs.battery_move)
         self._spend(self.costs.turn)
+        self._notify()
 
     def turn_right(self):
         self.heading = HEADINGS[(HEADINGS.index(self.heading) + 1) % 4]
         self._drain(self.costs.battery_move)
         self._spend(self.costs.turn)
+        self._notify()
 
     # --- cutting -------------------------------------------------------------------------------
 
@@ -170,14 +202,17 @@ class Game:
     def blade_on(self):
         self._require("blade_on")
         self.blade = True
+        self._notify()
 
     def blade_off(self):
         self._require("blade_off")
         self.blade = False
+        self._notify()
 
     def set_cut_height(self, mm):
         self._require("set_cut_height")
         self.cut_height = min(self.costs.cut_height_max, max(self.costs.cut_height_min, float(mm)))
+        self._notify()
 
     # --- battery and blade care ----------------------------------------------------------------
 
@@ -185,11 +220,13 @@ class Game:
         self._require("manual_recharge")
         self._spend(self.costs.manual_recharge)
         self.battery = 100.0
+        self._notify()
 
     def manual_sharpen(self):
         self._require("manual_sharpen")
         self._spend(self.costs.manual_sharpen)
         self.sharpness = 100.0
+        self._notify()
 
     def _at_station(self, what):
         if (self.x, self.y) != self.level.station:
@@ -200,12 +237,14 @@ class Game:
         self._at_station("charge")
         self._spend(self.costs.station)
         self.battery = 100.0
+        self._notify()
 
     def sharpen(self):
         self._require("sharpen")
         self._at_station("sharpen")
         self._spend(self.costs.station)
         self.sharpness = 100.0
+        self._notify()
 
     # --- looking around ------------------------------------------------------------------------
 
@@ -293,6 +332,7 @@ class Game:
                 if (nx, ny) == (self.x, self.y):
                     raise Collision("The person walked into the mower. The run stops.")
                 ob.x, ob.y = nx, ny
+                self._notify()
 
     # --- the score -----------------------------------------------------------------------------
 

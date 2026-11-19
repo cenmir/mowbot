@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mowbot</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="shell">
+  <nav id="activity" aria-label="Activity bar">
+    <button class="act active" title="Explorer">▤</button>
+    <button class="act" id="act-help" title="Unlocked functions">?</button>
+  </nav>
+
+  <aside id="sidebar">
+    <div class="sidebar-title">Explorer</div>
+    <div class="tree-head">MOWBOT</div>
+    <ul id="files" class="tree">
+      <li class="file active" data-file="main.py"><span class="ico py">py</span>main.py</li>
+    </ul>
+    <div class="tree-head">PROGRESS</div>
+    <div id="progress" class="progress">
+      <div>Level <b id="p-level">0</b>: <span id="p-name">Sequence</span></div>
+      <div>Tokens <b id="p-tokens">0</b></div>
+      <div>Next <span id="p-next">`for` loops for 200</span></div>
+      <button id="unlock" disabled>Unlock</button>
+      <label class="easy"><input type="checkbox" id="easy"> Easy mode</label>
+      <label class="easy">Replay level
+        <select id="level"></select>
+      </label>
+    </div>
+  </aside>
+
+  <main id="editors">
+    <section class="group" id="code-group">
+      <div class="tabs">
+        <div class="tab active" id="tab-main">main.py</div>
+        <div class="tab-actions">
+          <button id="run" title="Run (Ctrl+Enter)">▶ Run</button>
+          <button id="stop" title="Stop" disabled>■ Stop</button>
+        </div>
+      </div>
+      <div id="editor"></div>
+    </section>
+
+    <section class="group" id="lawn-group">
+      <div class="tabs">
+        <div class="tab active pinned">⚘ Lawn</div>
+        <div class="tab-actions">
+          <label>Speed <input type="range" id="speed" min="1" max="60" value="8"> <span id="speed-val">8</span>/s</label>
+        </div>
+      </div>
+      <div id="lawn-pane"><canvas id="lawn"></canvas></div>
+    </section>
+  </main>
+
+  <section id="panel">
+    <div class="tabs">
+      <div class="tab active">Output</div>
+      <div class="tab-actions"><button id="clear">clear</button></div>
+    </div>
+    <pre id="output"></pre>
+  </section>
+
+  <footer id="status">
+    <span id="s-state">loading Python…</span>
+    <span id="s-level"></span>
+    <span id="s-ticks">ticks 0</span>
+    <span id="s-battery" hidden>battery 100 %</span>
+    <span id="s-blade" hidden>blade 100 %</span>
+    <span id="s-tokens">tokens 0</span>
+    <span id="s-score">score 0 /1000</span>
+  </footer>
+</div>
+
+<script src="vendor/monaco/vs/loader.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

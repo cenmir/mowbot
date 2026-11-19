@@ -86,8 +86,8 @@ def palette_swatch():
 class Canvas:
     """An RGBA image with a shadow layer composited below the sprites."""
 
-    def __init__(self, w, h):
-        self.img = Image.new("RGBA", (w, h), (30, 30, 30, 255))
+    def __init__(self, w, h, bg=(30, 30, 30, 255)):
+        self.img = Image.new("RGBA", (w, h), bg)
         self.d = ImageDraw.Draw(self.img)
 
     def shadow(self, box):

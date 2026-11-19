@@ -7,3 +7,7 @@ __pycache__/
 DESIGN.pdf
 DESIGN.typ
 DESIGN_files/
+
+# fetched by web/fetch_vendor.py
+web/pyodide/
+web/vendor/

@@ -1,0 +1,57 @@
+/* A VS Code-like shell: activity bar, explorer, two editor groups, a panel and a status bar. */
+:root {
+  --bg: #1e1e1e; --side: #252526; --activity: #333333; --tabs: #2d2d2d; --tab-active: #1e1e1e;
+  --border: #3c3c3c; --status: #007acc; --fg: #cccccc; --dim: #858585; --accent: #0e639c;
+  --accent-hover: #1177bb; --green: #89d185; --red: #f14c4c; --yellow: #cca700;
+  --mono: "Cascadia Code", "Fira Code", Consolas, "DejaVu Sans Mono", monospace;
+  --ui: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font: 13px var(--ui); }
+button { font: inherit; color: inherit; background: var(--accent); border: 0; border-radius: 2px; padding: 3px 10px; cursor: pointer; }
+button:hover { background: var(--accent-hover); }
+button:disabled { background: #3a3d41; color: var(--dim); cursor: default; }
+
+#shell {
+  display: grid; height: 100%;
+  grid-template-columns: 48px 220px 1fr;
+  grid-template-rows: 1fr 180px 22px;
+  grid-template-areas: "activity sidebar editors" "activity sidebar panel" "status status status";
+}
+#activity { grid-area: activity; background: var(--activity); display: flex; flex-direction: column; align-items: center; padding-top: 6px; gap: 6px; }
+.act { width: 36px; height: 36px; background: none; font-size: 18px; color: var(--dim); border-left: 2px solid transparent; border-radius: 0; }
+.act.active, .act:hover { color: #fff; background: none; }
+.act.active { border-left-color: #fff; }
+
+#sidebar { grid-area: sidebar; background: var(--side); border-right: 1px solid var(--border); overflow: auto; }
+.sidebar-title { padding: 10px 20px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+.tree-head { padding: 4px 12px; font-size: 11px; font-weight: bold; }
+.tree { list-style: none; margin: 0; padding: 0; }
+.file { padding: 3px 24px; cursor: pointer; }
+.file.active { background: #37373d; }
+.ico { display: inline-block; width: 22px; font-size: 10px; color: #519aba; font-weight: bold; }
+.progress { padding: 6px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+.progress b { color: #fff; }
+.easy { display: flex; align-items: center; gap: 6px; color: var(--dim); }
+select { background: #3c3c3c; color: var(--fg); border: 1px solid var(--border); font: inherit; }
+
+#editors { grid-area: editors; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+.group { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--border); }
+.tabs { display: flex; align-items: stretch; background: var(--tabs); height: 35px; flex: none; }
+.tab { padding: 0 14px; display: flex; align-items: center; color: var(--dim); border-right: 1px solid var(--border); font-size: 13px; }
+.tab.active { background: var(--tab-active); color: #fff; border-top: 1px solid var(--status); }
+.tab.pinned { font-style: italic; }
+.tab-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--dim); }
+.tab-actions label { display: flex; align-items: center; gap: 6px; }
+#editor { flex: 1; min-height: 0; }
+#lawn-pane { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background: #161616; overflow: auto; }
+#lawn { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+#panel { grid-area: panel; display: flex; flex-direction: column; border-top: 1px solid var(--border); min-height: 0; }
+#output { flex: 1; margin: 0; padding: 6px 12px; overflow: auto; font: 12px var(--mono); white-space: pre-wrap; }
+#output .err { color: var(--red); }
+#output .ok { color: var(--green); }
+#output .note { color: var(--yellow); }
+
+#status { grid-area: status; background: var(--status); color: #fff; display: flex; align-items: center; gap: 18px; padding: 0 12px; font-size: 12px; }
+#status [hidden] { display: none; }
